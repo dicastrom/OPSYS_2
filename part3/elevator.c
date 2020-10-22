@@ -423,7 +423,7 @@ int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
                         sprintf(result, "%d: ", floor);
                         strcat(file, result);
 
-                        list_for_each(t, &floor.list){
+                        list_for_each(t, &floor.list){ 
                             pass = list_entry(t, Passenger, list);
                             if(pass->start == floor){
                                 j++;
