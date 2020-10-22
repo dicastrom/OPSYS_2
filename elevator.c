@@ -38,18 +38,17 @@ struct thread_parameters {
 	struct task_struct *kthread;
 };
 
-// IN PROGRESS - NOW
-int thread_run(void *data) {
-	struct thread_parameters *parm = data;
+int compile_thread(void *data) {
+	struct thread_parameters *parameter = data;
 
-	struct list_head* temp;
-	struct list_head* dummy;
+	struct list_head* t;
+	struct list_head* temporary;
 
 	Passenger* item;
 	Passenger* newitem;
 
 	while (!kthread_should_stop()) {
-		if (mutex_lock_interruptible(&parm->mutex) == 0) { 
+		if (mutex_lock_interruptible(&parameter->mutex) == 0) { 
 			if( (Elevator.active && Elevator.wait > 0) || Elevator.passengers > 0){
                 switch(Elevator.passengers){
                     case 0:
@@ -77,8 +76,8 @@ int thread_run(void *data) {
                 }
 				
                 if(Elevator.passengers > 0){
-					list_for_each_safe(temp,dummy,&elevator.list){
-						if(list_entry(temp, Passenger, list)->destination == Elevator.current_floor){
+					list_for_each_safe(t,dumtemporarylevator.list){
+						if(list_entry(t, Passenger, list)->destination == Elevator.current_floor){
 							Elevator.state = "LOADING";
 							Elevator.passengers--;
 							Elevator.attended++;
@@ -89,8 +88,8 @@ int thread_run(void *data) {
                                     break;
                             }
 
-							list_del(temp);
-							kfree(list_entry(temp, Passenger, list));
+							list_del(t);
+							kfree(list_entry(t, Passenger, list));
 						}
 					}
 				}
@@ -99,9 +98,9 @@ int thread_run(void *data) {
                     case 1:
                         if(Elevator.wait > 0){
                             ssleep(1);
-                            list_for_each_safe(temp,dummy,&floor.list){
+                            list_for_each_safe(t,dumtemporaryloor.list){
                                 int num = Elevator.passengers + 1;
-                                item = list_entry(temp, Passenger, list);
+                                item = list_entry(t, Passenger, list);
                                 
                                 switch(num){
                                     case 10:
@@ -132,7 +131,7 @@ int thread_run(void *data) {
                                                     }
                                                 }
                                                 
-                                                list_del(temp);
+                                                list_del(t);
                                                 kfree(item);
                                             } else if(item->type){
                                                 Elevator.state = "LOADING";
@@ -160,7 +159,7 @@ int thread_run(void *data) {
                                                     }
                                                 }
 
-                                                list_del(temp);
+                                                list_del(t);
                                                 kfree(item);
                                             } 
                                         }
@@ -194,7 +193,7 @@ int thread_run(void *data) {
                                                         }
                                                     }
 
-                                                    list_del(temp);
+                                                    list_del(t);
                                                     kfree(item);
                                                 } else if(item->type){
                                                     Elevator.state = "LOADING";
@@ -222,7 +221,7 @@ int thread_run(void *data) {
                                                         }
                                                     }
 
-                                                    list_del(temp);
+                                                    list_del(t);
                                                     kfree(item);
                                                 } 
                                             }
@@ -259,7 +258,7 @@ int thread_run(void *data) {
 			}
 			
 		}
-		mutex_unlock(&parm->mutex);
+		mutex_unlock(&parameter->mutex);
 	}
 
 	return 0;
@@ -319,7 +318,7 @@ long stop_elevator(void){
 
 // IN PROGRESS - WORKS
 long issue_request(int start_floor, int dest_floor, int type){
-	Passenger* temp = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
+	Passenger* t = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
 
     if(type > 2){
         return 1;
@@ -345,15 +344,15 @@ long issue_request(int start_floor, int dest_floor, int type){
         }
     }
 	
-	if(temp != NULL){
-        temp->type = type;
-        printk("Loaded a %d passenger.\n",temp->type);
+	if(t != NULL){
+        t->type = type;
+        printk("Loaded a %d passenger.\n",t->type);
 
-        temp->start = start_floor;
-        temp->destination = dest_floor;
+        t->start = start_floor;
+        t->destination = dest_floor;
         Elevator.wait += 1;
         
-        list_add_tail(&temp->list, &floor.list);
+        list_add_tail(&t->list, &floor.list);
     } else {
         return -ENOMEM;
     }
@@ -393,7 +392,7 @@ int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
                         break;
                 }
                 
-                struct list_head* temp;
+                struct list_head* t;
                 int j = 0;
                 int i = 0;
                 int length = 0;
@@ -428,8 +427,8 @@ int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
                         sprintf(result, "%d: ", floor);
                         strcat(filestring, result);
 
-                        list_for_each(temp, &floor.list){
-                            item = list_entry(temp, Passenger, list);
+                        list_for_each(t, &floor.list){
+                            item = list_entry(t, Passenger, list);
                             if(item->start == floor){
                                 j++;
                                 if(item->type){
@@ -455,8 +454,8 @@ int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
                         sprintf(result, "%d: ", floor);
                         strcat(filestring, result);
 
-                        list_for_each(temp, &floor.list){
-                            item = list_entry(temp, Passenger, list);
+                        list_for_each(t, &floor.list){
+                            item = list_entry(t, Passenger, list);
                             if(item->start == floor){
                                 j++;
                                 if(item->type){
@@ -511,9 +510,9 @@ int elevator_proc_release(struct inode *sp_inode, struct file *sp_file) {
 }
 
 // IN PROGRESS - WORKS
-void thread_init_parameter(struct thread_parameters *parm) {
-	mutex_init(&parm->mutex);
-	parm->kthread = kthread_run(thread_run, parm, "Elevator thread");
+void thread_init_parameter(struct thread_parameters *parameter) {
+	mutex_init(&parameter->mutex);
+	parameter->kthread = kthread_run(compile_thread, parameter, "Elevator thread");
 }
 
 extern long (*STUB_start_elevator)(void);
@@ -554,8 +553,8 @@ module_init(elevator_init);
 
 // IN PROGRESS -> WORKS
 static void elevator_exit(void) {
-	struct list_head* dummy;
-    struct list_head* temp;
+	struct list_head* temporary;
+    struct list_head* t;
     Passenger* p;
 
     STUB_start_elevator = NULL;
@@ -567,15 +566,15 @@ static void elevator_exit(void) {
 
 	remove_proc_entry("elevator", NULL);
 
-	list_for_each_safe(temp,dummy,&elevator.list){
-		p = list_entry(temp,Passenger,list);
-		list_del(temp);
+	list_for_each_safe(t,dumtemporarylevator.list){
+		p = list_entry(t,Passenger,list);
+		list_del(t);
 		kfree(p);
 	}
 
-	list_for_each_safe(temp,dummy,&floor.list){
-		p = list_entry(temp,Passenger,list);
-		list_del(temp);
+	list_for_each_safe(t,dumtemporaryloor.list){
+		p = list_entry(t,Passenger,list);
+		list_del(t);
 		kfree(p);
 	}
 
