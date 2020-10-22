@@ -45,13 +45,13 @@ This part is about tracing system calls. Empty.c is an empty C program and part1
 		3. rm Module* *.ko .o .mod modules
 
 ## Part 3: Elevator Scheduler: Humans v. Zombies - Completed by Liz & Diego
-- Kernel Module with an Elevator - Liz & Diego
-- Add System Calls - Liz & Diego
-- /Proc - Liz
-- Start elevator - Liz
-- Stop elevator - Liz
-- Issue request - Liz
-- Testing and debugging - Liz & Diego
+Kernel Module with an Elevator - Liz & Diego
+Add System Calls - Liz & Diego
+/Proc - Liz
+Start elevator - Liz
+Stop elevator - Liz
+Issue request - Liz
+Testing and debugging - Liz & Diego
 
     Files:
         Makefile
