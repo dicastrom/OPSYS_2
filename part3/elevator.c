@@ -1,4 +1,4 @@
-// LIZ'S & DIEGO OPSYS PROJ 2 PART 3 
+// LIZ'S CODE
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -14,215 +14,214 @@
 #include <linux/mutex.h>
 
 typedef struct _passenger{
-	int type;
-	int start;
-	struct list_head list;
-	int destination;
+    int type;
+    int start;
+    int destination;
+    struct list_head list;
 } Passenger;
 
-static Passenger floor;
-static Passenger elevator;
+static Passenger Passenger_floor;
+static Passenger Passenger_elevator;
 
 static struct _elevator{
-	char* state;
-    int wait;
-	int attended;
+    char* status;
+    int waiting;
+    int serviced;
     int active;
-	int passengers;
-	int infected;
-    int current_floor;
+    int passengers;
+    int infected;
+    int curr_floor;
 } Elevator;
 
 struct thread_parameters {
-	struct mutex mutex;
-	struct task_struct *kthread;
+    struct mutex mutex;
+    struct task_struct *kthread;
 };
 
-int compile_thread(void *data) {
-	struct thread_parameters *parameter = data;
+// IN PROGRESS - NOW
+int thread_run(void *data) {
+    struct thread_parameters *parm = data;
 
-	struct list_head* t;
-	struct list_head* temporary;
+    struct list_head* temp;
+    struct list_head* dummy;
 
-	Passenger* pass;
-	Passenger* newpass;
+    Passenger* newitem;
 
-	while (!kthread_should_stop()) {
-		if (mutex_lock_interruptible(&parameter->mutex) == 0) { 
-			if( (Elevator.active && Elevator.wait > 0) || Elevator.passengers > 0){
+    while (!kthread_should_stop()) {
+        if (mutex_lock_interruptible(&parm->mutex) == 0) { 
+            if( (Elevator.active && Elevator.waiting > 0) || Elevator.passengers > 0){
                 switch(Elevator.passengers){
                     case 0:
                         ssleep(2);
-                        if(list_first_entry(&floor.list, Passenger, list)->start > Elevator.current_floor){
-                        	Elevator.current_floor++;
-                            Elevator.state = "UP";
-                        }else if(list_first_entry(&floor.list, Passenger, list)->start < Elevator.current_floor){
-                        	Elevator.state = "DOWN";
-                        	Elevator.current_floor--;
+                        if(list_first_entry(&Passenger_floor.list, Passenger, list)->start > Elevator.curr_floor){
+                            Elevator.curr_floor++;
+                            Elevator.status = "UP";
+                        }else if(list_first_entry(&Passenger_floor.list, Passenger, list)->start < Elevator.curr_floor){
+                            Elevator.status = "DOWN";
+                            Elevator.curr_floor--;
                         }
                         break;
                     default:
                         ssleep(2);
-                        printk(KERN_NOTICE "First passenger in the elevator wants to go to floor %d",list_first_entry(&elevator.list, Passenger, list)->destination);
+                        printk(KERN_NOTICE "First passenger in the elevator wants to go to floor %d",list_first_entry(&Passenger_elevator.list, Passenger, list)->destination);
                         
-                        if(list_first_entry(&elevator.list, Passenger, list)->destination > Elevator.current_floor){
-                        	Elevator.current_floor++;
-                            Elevator.state = "UP";
-                        }else if(list_first_entry(&elevator.list, Passenger, list)->destination < Elevator.current_floor){
-                            Elevator.current_floor--;
-                            Elevator.state = "DOWN";
+                        if(list_first_entry(&Passenger_elevator.list, Passenger, list)->destination > Elevator.curr_floor){
+                            Elevator.curr_floor++;
+                            Elevator.status = "UP";
+                        }else if(list_first_entry(&Passenger_elevator.list, Passenger, list)->destination < Elevator.curr_floor){
+                            Elevator.curr_floor--;
+                            Elevator.status = "DOWN";
                         }
                         break;
                 }
-				
+                
                 if(Elevator.passengers > 0){
-					list_for_each_safe(t,temporary,&elevator.list){
-						if(list_entry(t, Passenger, list)->destination == Elevator.current_floor){
-							Elevator.state = "LOADING";
-							Elevator.passengers--;
-							Elevator.attended++;
-							
+                    list_for_each_safe(temp,dummy,&Passenger_elevator.list){
+                        if(list_entry(temp, Passenger, list)->destination == Elevator.curr_floor){
+                            Elevator.status = "LOADING";
+                            Elevator.passengers--;
+                            Elevator.serviced++;
+                            
                             switch (Elevator.passengers){
                                 case 0:
                                     Elevator.infected = 0;
                                     break;
                             }
 
-							list_del(t);
-							kfree(list_entry(t, Passenger, list));
-						}
-					}
-				}
+                            list_del(temp);
+                            kfree(list_entry(temp, Passenger, list));
+                        }
+                    }
+                }
 
                 switch(Elevator.active){
                     case 1:
-                        if(Elevator.wait > 0){
+                        if(Elevator.waiting > 0){
                             ssleep(1);
-                            list_for_each_safe(t,temporary,&elevator.list){
+                            list_for_each_safe(temp,dummy,&Passenger_floor.list){
                                 int num = Elevator.passengers + 1;
-                                pass = list_entry(t, Passenger, list);
                                 
                                 switch(num){
                                     case 10:
-                                        if(pass->start == Elevator.current_floor){
-                                            if(pass->type == Elevator.infected){
-                                                Elevator.state = "LOADING";
+                                        if(list_entry(temp, Passenger, list)->start == Elevator.curr_floor){
+                                            if(list_entry(temp, Passenger, list)->type == Elevator.infected){
+                                                Elevator.status = "LOADING";
 
-                                                newpass = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
+                                                newitem = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
 
-                                                if(newpass == NULL){
+                                                if(newitem == NULL){
                                                     return -ENOMEM;
                                                 }
                                                 
-                                                newpass->start = pass->start;
-                                                newpass->type = pass->type;
-                                                newpass->destination = pass->destination;
+                                                newitem->start = list_entry(temp, Passenger, list)->start;
+                                                newitem->type = list_entry(temp, Passenger, list)->type;
+                                                newitem->destination = list_entry(temp, Passenger, list)->destination;
                                                 
-                                                list_add_tail(&newpass->list,&elevator.list);
+                                                list_add_tail(&newitem->list,&Passenger_elevator.list);
                                                 
                                                 Elevator.passengers++;
-                                                Elevator.wait--;
+                                                Elevator.waiting--;
 
-                                                if(pass->type){
+                                                if(list_entry(temp, Passenger, list)->type){
                                                     switch (Elevator.infected){
                                                         case 0:
-                                                            Elevator.infected = pass->type;
+                                                            Elevator.infected = list_entry(temp, Passenger, list)->type;
                                                             break;
                                                     }
                                                 }
                                                 
-                                                list_del(t);
-                                                kfree(pass);
-                                            } else if(pass->type){
-                                                Elevator.state = "LOADING";
+                                                list_del(temp);
+                                                kfree(list_entry(temp, Passenger, list));
+                                            } else if(list_entry(temp, Passenger, list)->type){
+                                                Elevator.status = "LOADING";
 
-                                                newpass = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
+                                                newitem = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
 
-                                                if(newpass == NULL){
+                                                if(newitem == NULL){
                                                     return -ENOMEM;
                                                 }
                                                 
-                                                newpass->start = pass->start;
-                                                newpass->type = pass->type;
-                                                newpass->destination = pass->destination;
+                                                newitem->start = list_entry(temp, Passenger, list)->start;
+                                                newitem->type = list_entry(temp, Passenger, list)->type;
+                                                newitem->destination = list_entry(temp, Passenger, list)->destination;
                                                 
-                                                list_add_tail(&newpass->list,&elevator.list);
+                                                list_add_tail(&newitem->list,&Passenger_elevator.list);
                                                 
                                                 Elevator.passengers++;
-                                                Elevator.wait--;
+                                                Elevator.waiting--;
 
-                                                if(pass->type){
+                                                if(list_entry(temp, Passenger, list)->type){
                                                     switch (Elevator.infected){
                                                         case 0:
-                                                            Elevator.infected = pass->type;
+                                                            Elevator.infected = list_entry(temp, Passenger, list)->type;
                                                             break;
                                                     }
                                                 }
 
-                                                list_del(t);
-                                                kfree(pass);
+                                                list_del(temp);
+                                                kfree(list_entry(temp, Passenger, list));
                                             } 
                                         }
                                         break;
                                     default: 
-                                        if(pass->start == Elevator.current_floor){
+                                        if(list_entry(temp, Passenger, list)->start == Elevator.curr_floor){
                                             if(num < 10){
-                                                if(pass->type == Elevator.infected){
-                                                    Elevator.state = "LOADING";
+                                                if(list_entry(temp, Passenger, list)->type == Elevator.infected){
+                                                    Elevator.status = "LOADING";
 
-                                                    newpass = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
+                                                    newitem = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
 
-                                                    if(newpass == NULL){
+                                                    if(newitem == NULL){
                                                         return -ENOMEM;
                                                     }
                                                     
-                                                    newpass->start = pass->start;
-                                                    newpass->type = pass->type;
-                                                    newpass->destination = pass->destination;
+                                                    newitem->start = list_entry(temp, Passenger, list)->start;
+                                                    newitem->type = list_entry(temp, Passenger, list)->type;
+                                                    newitem->destination = list_entry(temp, Passenger, list)->destination;
                                                     
-                                                    list_add_tail(&newpass->list,&elevator.list);
+                                                    list_add_tail(&newitem->list,&Passenger_elevator.list);
                                                     
                                                     Elevator.passengers++;
-                                                    Elevator.wait--;
+                                                    Elevator.waiting--;
 
-                                                    if(pass->type){
+                                                    if(list_entry(temp, Passenger, list)->type){
                                                         switch (Elevator.infected){
                                                             case 0:
-                                                                Elevator.infected = pass->type;
+                                                                Elevator.infected = list_entry(temp, Passenger, list)->type;
                                                                 break;
                                                         }
                                                     }
 
-                                                    list_del(t);
-                                                    kfree(pass);
-                                                } else if(pass->type){
-                                                    Elevator.state = "LOADING";
+                                                    list_del(temp);
+                                                    kfree(list_entry(temp, Passenger, list));
+                                                } else if(list_entry(temp, Passenger, list)->type){
+                                                    Elevator.status = "LOADING";
 
-                                                    newpass = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
+                                                    newitem = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
 
-                                                    if(newpass == NULL){
+                                                    if(newitem == NULL){
                                                         return -ENOMEM;
                                                     }
                                                     
-                                                    newpass->start = pass->start;
-                                                    newpass->type = pass->type;
-                                                    newpass->destination = pass->destination;
+                                                    newitem->start = list_entry(temp, Passenger, list)->start;
+                                                    newitem->type = list_entry(temp, Passenger, list)->type;
+                                                    newitem->destination = list_entry(temp, Passenger, list)->destination;
                                                     
-                                                    list_add_tail(&newpass->list,&elevator.list);
+                                                    list_add_tail(&newitem->list,&Passenger_elevator.list);
                                                     
                                                     Elevator.passengers++;
-                                                    Elevator.wait--;
+                                                    Elevator.waiting--;
 
-                                                    if(pass->type){
+                                                    if(list_entry(temp, Passenger, list)->type){
                                                         switch (Elevator.infected){
                                                             case 0:
-                                                                Elevator.infected = pass->type;
+                                                                Elevator.infected = list_entry(temp, Passenger, list)->type;
                                                                 break;
                                                         }
                                                     }
 
-                                                    list_del(t);
-                                                    kfree(pass);
+                                                    list_del(temp);
+                                                    kfree(list_entry(temp, Passenger, list));
                                                 } 
                                             }
                                         }
@@ -232,65 +231,66 @@ int compile_thread(void *data) {
                         }
                         break;
                 }
-			}else{
+            }else{
                 switch(Elevator.passengers){
                     case 0: 
                         if(Elevator.active){
-                            switch (Elevator.wait){
+                            switch (Elevator.waiting){
                                 case 0:
-                                    Elevator.state = "IDLE";
+                                    Elevator.status = "IDLE";
                                     break;
                                 default:
                                     switch(Elevator.active){
                                         case 0:
-                                            Elevator.state = "OFFLINE";
+                                            Elevator.status = "OFFLINE";
                                             break;
                                     }
                                     break;
                             }
                         } else {
                             if(Elevator.active == 0){
-                                Elevator.state = "OFFLINE";
+                                Elevator.status = "OFFLINE";
                             }
                         }
                         break;
                 }
-			}
-			
-		}
-		mutex_unlock(&parameter->mutex);
-	}
+            }
+            
+        }
+        mutex_unlock(&parm->mutex);
+    }
 
-	return 0;
+    return 0;
 }
 
+// IN PROGRESS - WORKS
 long start_elevator(void){
-    int same = strcmp(Elevator.state,"OFFLINE");
+    int same = strcmp(Elevator.status,"OFFLINE");
 
     switch(same){
         case 0:
-            Elevator.state = "IDLE";
-            Elevator.current_floor = 1;
+            Elevator.status = "IDLE";
+            Elevator.curr_floor = 1;
             Elevator.passengers = 0;
             Elevator.passengers = 0;
-            Elevator.wait = 0;
-            Elevator.attended = 0;
+            Elevator.waiting = 0;
+            Elevator.serviced = 0;
             Elevator.active = 1;
             Elevator.infected = 0;
-            printk(KERN_NOTICE "Elevator initialized. Status: %s\n", Elevator.state);
+            printk(KERN_NOTICE "Elevator initialized. Status: %s\n", Elevator.status);
             return 0;
             break;
         default:
-            if(Elevator.state == NULL){
-                Elevator.state = "IDLE";
-                Elevator.current_floor = 1;
+            if(Elevator.status == NULL){
+                Elevator.status = "IDLE";
+                Elevator.curr_floor = 1;
                 Elevator.passengers = 0;
                 Elevator.passengers = 0;
-                Elevator.wait = 0;
-                Elevator.attended = 0;
+                Elevator.waiting = 0;
+                Elevator.serviced = 0;
                 Elevator.active = 1;
                 Elevator.infected = 0;
-                printk(KERN_NOTICE "Elevator initialized. Status: %s\n", Elevator.state);
+                printk(KERN_NOTICE "Elevator initialized. Status: %s\n", Elevator.status);
                 return 0;
             } else {
                 return 1;
@@ -299,8 +299,9 @@ long start_elevator(void){
     }
 }
 
+// DONE - WORKS
 long stop_elevator(void){
-    int same = strcmp("OFFLINE", Elevator.state);
+    int same = strcmp("OFFLINE", Elevator.status);
 
     switch (same){
         case 1:
@@ -314,8 +315,9 @@ long stop_elevator(void){
     return same;
 }
 
+// IN PROGRESS - WORKS
 long issue_request(int start_floor, int dest_floor, int type){
-	Passenger* t = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
+    Passenger* temp = kmalloc(sizeof(Passenger), __GFP_RECLAIM);
 
     if(type > 2){
         return 1;
@@ -340,75 +342,75 @@ long issue_request(int start_floor, int dest_floor, int type){
             }
         }
     }
-	
-	if(t != NULL){
-        t->type = type;
-        printk("Loaded a %d passenger.\n",t->type);
+    
+    if(temp != NULL){
+        temp->type = type;
+        printk("Loaded a %d passenger.\n",temp->type);
 
-        t->start = start_floor;
-        t->destination = dest_floor;
-        Elevator.wait += 1;
+        temp->start = start_floor;
+        temp->destination = dest_floor;
+        Elevator.waiting += 1;
         
-        list_add_tail(&t->list, &floor.list);
+        list_add_tail(&temp->list, &Passenger_floor.list);
     } else {
         return -ENOMEM;
     }
 
-	return 0;
+    return 0;
 }
 
 static int read;
 struct thread_parameters thread;
-static char* file;
+static char* filestring;
+// IN PROGRESS - WORKS
 int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
-	char* representation = kmalloc(sizeof(char) * 1000, __GFP_FS | __GFP_RECLAIM | __GFP_IO);
-    file = kmalloc(sizeof(char) * 1000, __GFP_IO | __GFP_RECLAIM | __GFP_FS);
-	Passenger* pass;
+    char* representation = kmalloc(sizeof(char) * 1000, __GFP_FS | __GFP_RECLAIM | __GFP_IO);
+    filestring = kmalloc(sizeof(char) * 1000, __GFP_IO | __GFP_RECLAIM | __GFP_FS);
 
     if(representation == ""){
         return -ENOMEM;
     } else if(representation == NULL){
         return -ENOMEM;
         } else {
-            if(file == NULL){
+            if(filestring == NULL){
                 return -ENOMEM;
             } else {
 
-                sprintf(file, "Elevator state: %s\n", Elevator.state);
+                sprintf(filestring, "Elevator state: %s\n", Elevator.status);
 
                 char* result = kmalloc(sizeof(char) * 1000, __GFP_IO | __GFP_RECLAIM | __GFP_FS);
 
-                strcat(file, "Elevator state: ");
+                strcat(filestring, "Elevator status: ");
                 switch(Elevator.infected){
                     case 1:
-                        strcat(file, "Infected\n");
+                        strcat(filestring, "Infected\n");
                         break;
                     case 0:
-                        strcat(file, "Not infected\n");
+                        strcat(filestring, "Not infected\n");
                         break;
                 }
                 
-                struct list_head* t;
+                struct list_head* temp;
                 int j = 0;
                 int i = 0;
                 int length = 0;
 
-                strcat(file, "Current floor: ");
-                sprintf(result, "%d", Elevator.current_floor);
-                strcat(file, result);
-                strcat(file, "\n");
-                strcat(file, "Number of passengers: ");
+                strcat(filestring, "Current floor: ");
+                sprintf(result, "%d", Elevator.curr_floor);
+                strcat(filestring, result);
+                strcat(filestring, "\n");
+                strcat(filestring, "Number of passengers: ");
                 sprintf(result, "%d", Elevator.passengers);
-                strcat(file, result);
-                strcat(file, "\n");
-                strcat(file, "Number of passengers wait: ");
-                sprintf(result, "%d", Elevator.wait);
-                strcat(file, result);
-                strcat(file, "\n");
-                strcat(file, "Number of passengers attended: ");
-                sprintf(result, "%d", Elevator.attended);
-                strcat(file, result);
-                strcat(file, "\n\n");
+                strcat(filestring, result);
+                strcat(filestring, "\n");
+                strcat(filestring, "Number of passengers waiting: ");
+                sprintf(result, "%d", Elevator.waiting);
+                strcat(filestring, result);
+                strcat(filestring, "\n");
+                strcat(filestring, "Number of passengers serviced: ");
+                sprintf(result, "%d", Elevator.serviced);
+                strcat(filestring, result);
+                strcat(filestring, "\n\n");
 
                 int floor = 0;
                 while(i < 10){
@@ -416,18 +418,17 @@ int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
                     floor = 10 - i;
                     memset(representation, 0, strlen(representation));
 
-                    if(Elevator.current_floor == floor){
-                        strcat(file, "[ * ] ");
+                    if(Elevator.curr_floor == floor){
+                        strcat(filestring, "[ * ] ");
 
-                        strcat(file, "Floor ");
+                        strcat(filestring, "Floor ");
                         sprintf(result, "%d: ", floor);
-                        strcat(file, result);
+                        strcat(filestring, result);
 
-                        list_for_each(t, &floor.list){ 
-                            pass = list_entry(t, Passenger, list);
-                            if(pass->start == floor){
+                        list_for_each(temp, &Passenger_floor.list){
+                            if(list_entry(temp, Passenger, list)->start == floor){
                                 j++;
-                                if(pass->type){
+                                if(list_entry(temp, Passenger, list)->type){
                                     strcat(representation, "X ");
                                 } else {
                                     strcat(representation, "| ");
@@ -436,25 +437,24 @@ int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
                         }
 
                         sprintf(result, "%d ", j);
-                        strcat(file,result);
+                        strcat(filestring,result);
 
                         if(strlen(representation) > 0){
-                            strcat(file,representation);
+                            strcat(filestring,representation);
                         }
 
-                        strcat(file,"\n");
+                        strcat(filestring,"\n");
                     } else {
-                        strcat(file, "[   ] ");
+                        strcat(filestring, "[   ] ");
 
-                        strcat(file, "Floor ");
+                        strcat(filestring, "Floor ");
                         sprintf(result, "%d: ", floor);
-                        strcat(file, result);
+                        strcat(filestring, result);
 
-                        list_for_each(t, &floor.list){
-                            pass = list_entry(t, Passenger, list);
-                            if(pass->start == floor){
+                        list_for_each(temp, &Passenger_floor.list){
+                            if(list_entry(temp, Passenger, list)->start == floor){
                                 j++;
-                                if(pass->type){
+                                if(list_entry(temp, Passenger, list)->type){
                                     strcat(representation, "X ");
                                 } else {
                                     strcat(representation, "| ");
@@ -463,13 +463,13 @@ int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
                         }
 
                         sprintf(result, "%d ", j);
-                        strcat(file,result);
+                        strcat(filestring,result);
 
                         if(strlen(representation) > 0){
-                            strcat(file,representation);
+                            strcat(filestring,representation);
                         }
 
-                        strcat(file,"\n");
+                        strcat(filestring,"\n");
                     }
                     i++;
                 }
@@ -477,50 +477,54 @@ int elevator_proc_open(struct inode *sp_inode, struct file *sp_file) {
                 mutex_unlock(&thread.mutex);            
                 kfree(representation);
                 read = 1;
-                strcat(file, "\n(\"|\" for human, \"X\" for zombie)\n\n");
+                strcat(filestring, "\n(\"|\" for human, \"X\" for zombie)\n\n");
             }
     }
 
-	return 0;
+    return 0;
 }
 
-ssize_t elevator_proc_read(struct file *sp_file, char __user *buf, size_t size, loff_t *offset) {	
-	read = !read;
+// DONE - WORKS
+ssize_t elevator_proc_read(struct file *sp_file, char __user *buf, size_t size, loff_t *offset) {   
+    read = !read;
 
     switch(read){
         case 1:
             return 0;
             break;
         case 0:
-            copy_to_user(buf, file, strlen(file));
-            return strlen(file);
+            copy_to_user(buf, filestring, strlen(filestring));
+            return strlen(filestring);
         break;
     }
 }
 
+// IN PROGRESS - WORKS
 int elevator_proc_release(struct inode *sp_inode, struct file *sp_file) {
-	kfree(file);
-	return 0;
+    kfree(filestring);
+    return 0;
 }
 
-void thread_init_parameter(struct thread_parameters *parameter) {
-	mutex_init(&parameter->mutex);
-	parameter->kthread = kthread_run(compile_thread, parameter, "Elevator thread");
+// IN PROGRESS - WORKS
+void thread_init_parameter(struct thread_parameters *parm) {
+    mutex_init(&parm->mutex);
+    parm->kthread = kthread_run(thread_run, parm, "Elevator thread");
 }
 
 extern long (*STUB_start_elevator)(void);
 extern long (*STUB_stop_elevator)(void);
 extern long (*STUB_issue_request)(int,int,int);
 static struct file_operations procfile_handler;
+// IN PROGRESS - WORKS
 static int elevator_init(void) {
-	procfile_handler.open = elevator_proc_open;
-	procfile_handler.read = elevator_proc_read;
-	procfile_handler.release = elevator_proc_release;
+    procfile_handler.open = elevator_proc_open;
+    procfile_handler.read = elevator_proc_read;
+    procfile_handler.release = elevator_proc_release;
 
-	STUB_start_elevator = start_elevator;
-	STUB_issue_request = issue_request;
-	STUB_stop_elevator = stop_elevator;
-	
+    STUB_start_elevator = start_elevator;
+    STUB_issue_request = issue_request;
+    STUB_stop_elevator = stop_elevator;
+    
     if(proc_create("elevator",0644,NULL,&procfile_handler)){
         thread_init_parameter(&thread);
 
@@ -530,8 +534,8 @@ static int elevator_init(void) {
             return PTR_ERR(thread.kthread);
         } else {
             printk(KERN_NOTICE "Elevator module started \n");
-            INIT_LIST_HEAD(&floor.list);
-            INIT_LIST_HEAD(&elevator.list);
+            INIT_LIST_HEAD(&Passenger_floor.list);
+            INIT_LIST_HEAD(&Passenger_elevator.list);
         }
     } else {
         remove_proc_entry("elevator", NULL);
@@ -539,35 +543,34 @@ static int elevator_init(void) {
         return -ENOMEM;
     }
 
-	return 0;
+    return 0;
 }
 module_init(elevator_init);
 
+// IN PROGRESS -> WORKS
 static void elevator_exit(void) {
-	struct list_head* temporary;
-    struct list_head* t;
+    struct list_head* dummy;
+    struct list_head* temp;
     Passenger* p;
 
     STUB_start_elevator = NULL;
-	STUB_issue_request = NULL;
-	STUB_stop_elevator = NULL;
-	
-	kthread_stop(thread.kthread);
-	mutex_destroy(&thread.mutex);
+    STUB_issue_request = NULL;
+    STUB_stop_elevator = NULL;
+    
+    kthread_stop(thread.kthread);
+    mutex_destroy(&thread.mutex);
 
-	remove_proc_entry("elevator", NULL);
+    remove_proc_entry("elevator", NULL);
 
-	list_for_each_safe(t,temporary,&elevator.list){
-		p = list_entry(t,Passenger,list);
-		list_del(t);
-		kfree(p);
-	}
+    list_for_each_safe(temp,dummy,&Passenger_elevator.list){
+        list_del(temp);
+        kfree(list_entry(temp,Passenger,list));
+    }
 
-	list_for_each_safe(t,temporary,&elevator.list){
-		p = list_entry(t,Passenger,list);
-		list_del(t);
-		kfree(p);
-	}
+    list_for_each_safe(temp,dummy,&Passenger_floor.list){
+        list_del(temp);
+        kfree(list_entry(temp,Passenger,list));
+    }
 
     printk(KERN_NOTICE "Removed /proc/elevator module\n");
 }
