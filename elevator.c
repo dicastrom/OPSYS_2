@@ -1,4 +1,4 @@
-// LIZ'S & DIEGO OPSYS PROJ 2 PART 3 CODE
+// LIZ'S & DIEGO OPSYS PROJ 2 PART 3 
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
