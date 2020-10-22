@@ -76,7 +76,7 @@ int compile_thread(void *data) {
                 }
 				
                 if(Elevator.passengers > 0){
-					list_for_each_safe(t,dumtemporarylevator.list){
+					list_for_each_safe(t,temporary,&elevator.list){
 						if(list_entry(t, Passenger, list)->destination == Elevator.current_floor){
 							Elevator.state = "LOADING";
 							Elevator.passengers--;
@@ -98,7 +98,7 @@ int compile_thread(void *data) {
                     case 1:
                         if(Elevator.wait > 0){
                             ssleep(1);
-                            list_for_each_safe(t,dumtemporaryloor.list){
+                            list_for_each_safe(t,temporary,&elevator.list){
                                 int num = Elevator.passengers + 1;
                                 pass = list_entry(t, Passenger, list);
                                 
@@ -557,13 +557,13 @@ static void elevator_exit(void) {
 
 	remove_proc_entry("elevator", NULL);
 
-	list_for_each_safe(t,dumtemporarylevator.list){
+	list_for_each_safe(t,temporary,&elevator.list){
 		p = list_entry(t,Passenger,list);
 		list_del(t);
 		kfree(p);
 	}
 
-	list_for_each_safe(t,dumtemporaryloor.list){
+	list_for_each_safe(t,temporary,&elevator.list){
 		p = list_entry(t,Passenger,list);
 		list_del(t);
 		kfree(p);
