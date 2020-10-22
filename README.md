@@ -1,20 +1,21 @@
-COP 4610 Project 2 Kernel Module Programming
+# COP 4610 Project 2 Kernel Module Programming <br>
 
-Project 2 of our Operating Systems Class<
-Group Members: Diego Castro and Liz Parra (Git: lizparra)
-Instructor: Professor An-I Wang
+Project 2 of our Operating Systems Class<br>
+Group Members: Diego Castro and Liz Parra (Git: lizparra)<br>
+Instructor: Professor An-I Wang<br>
 
-Known bugs:
-   - No known bugs.
+## Known bugs:
+No known bugs.
 
-Completed:
- Part 1: System-call Tracing- Completed by Diego
-This part is about tracing system calls. Empty.c is an empty C program and part1.c is a program that has exactly 7 system-calls more than empty.c. No makefile required for this part. 
-        Files:
-                empty.c
-                empty.trace
-                part1.c
-                part1.trace 
+## Completed:
+## Part 1: System-call Tracing- Completed by Diego
+This part is about tracing system calls. Empty.c is an empty C program and part1.c is a program that has exactly 7 system-calls more than empty.c. No makefile required for this part.
+        
+    Files:
+        empty.c
+        empty.trace
+        part1.c
+        part1.trace
 	Usage: 
 	1. First get both empty.c and part1.c on the same directory of the Virtual Machiene
 	2. gcc -o empty.x empty.c
@@ -23,11 +24,11 @@ This part is about tracing system calls. Empty.c is an empty C program and part1
 	5. strace -o part1.trace ./part1.x
 	6. Compare the two .trace files and see that the difference are the 7 extra system calls at the end of the file
 
- Part 2: Kernel Module - Completed by Diego This part is about creating a kernel module that displays the current time (in seconds) after the Unix Epoch (January 1st, 1970). The makefile compiles the kernel objects which are then installed by using the insmod command.
+ ## Part 2: Kernel Module - Completed by DiegoThis part is about creating a kernel module that displays the current time (in seconds) after the Unix Epoch (January 1st, 1970). The makefile compiles the kernel objects which are then installed by using the insmod command.
 
-        Files:
-               Makefile
-		my_timer.c 
+    Files:
+        Makefile
+        my_timer.c
 	Usage: 
 	- Installing & Running
 		1. Assuming you are using a Virtual Machine, you should get the my_timer.c and Makefiles onto the Virtual Machine.
@@ -43,7 +44,7 @@ This part is about tracing system calls. Empty.c is an empty C program and part1
 		2. Optional: lsmod | grep my_timer (to see if it installed)
 		3. rm Module* *.ko .o .mod modules
 
-Part 3: Elevator Scheduler: Humans v. Zombies - Completed by Liz & Diego
+## Part 3: Elevator Scheduler: Humans v. Zombies - Completed by Liz & Diego
 - Kernel Module with an Elevator - Liz & Diego
 - Add System Calls - Liz & Diego
 - /Proc - Liz
@@ -52,9 +53,9 @@ Part 3: Elevator Scheduler: Humans v. Zombies - Completed by Liz & Diego
 - Issue request - Liz
 - Testing and debugging - Liz & Diego
 
-        Files:
-                Makefile
-		elevator.c 
+    Files:
+        Makefile
+        elevator.c
 	Usage: 
     - terminal 1: 
 		1. /usr/src/ElevatorModule
